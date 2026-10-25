@@ -17,6 +17,7 @@ export interface NewResourceInput {
   url: string;
   kind: string;
   access: string;
+  language?: string;
   estMinutes: number;
 }
 
@@ -225,6 +226,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         url: input.url,
         resourceKind: input.kind,
         access: input.access,
+        language: input.language,
         estMinutes: input.estMinutes,
       });
       await afterMutation(personalId, moduleId);

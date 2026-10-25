@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PersonalItem, PersonalTrack } from '../api/types';
 import { Icon } from '../components/Icon';
-import { ChipRow, EmptyState, ErrorCard, MiniBtn, PBar, SearchBox, Spinner } from '../components/ui';
+import { ChipRow, EmptyState, ErrorCard, MiniBtn, PBar, SearchBox, Spinner, languageName } from '../components/ui';
 import { fmtClock, fmtTime } from '../lib/format';
 import { usePerformance } from '../state/PerformanceContext';
 import { useTimer } from '../state/TimerContext';
@@ -264,7 +264,7 @@ function ItemRow({
         >
           {titleOf(item)}
           <span className="tiny" style={{ display: 'block', fontWeight: 400 }}>
-            {moduleTitle} · {kindLabel}
+            {moduleTitle} · {kindLabel} · {languageName(item.language)}
             {item.elapsedSec > 0 ? ` · ${fmtClock(item.elapsedSec)} logged` : ''}
             {!resource && item.estMinutes > 0 ? ` · ${fmtTime(item.estMinutes)}` : ''}
           </span>

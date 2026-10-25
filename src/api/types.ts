@@ -71,6 +71,8 @@ export interface ResourceItem {
   url: string | null;
   kind: string;
   access: string;
+  /** BCP-47-ish content language, e.g. "en", "hi". */
+  language: string;
   summary: string;
   estMinutes: number;
   avgRating: number;
@@ -85,6 +87,7 @@ export interface LabItem {
   rank: number;
   task: string;
   detail: string;
+  language: string;
   solution: Solution | null;
   estMinutes: number;
   avgRating: number;
@@ -125,6 +128,7 @@ export interface PersonalResource {
   url: string | null;
   kind: string;
   access: string;
+  language: string;
   summary: string;
   avgRating?: number;
   ratingCount?: number;
@@ -146,6 +150,7 @@ export interface PersonalLab {
   completedAt: number | null;
   task: string;
   detail: string;
+  language: string;
   solution: Solution | null;
   rank?: number;
   avgRating?: number;

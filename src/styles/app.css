@@ -552,6 +552,17 @@ a {
   letter-spacing: 0;
 }
 
+.pill--lang {
+  background: #eceaf6;
+  color: #5a4b8a;
+  letter-spacing: 0.6px;
+}
+
+.pill--lang--alt {
+  background: rgba(255, 149, 0, 0.16);
+  color: #8a4b00;
+}
+
 /* buttons */
 .btn {
   border: none;

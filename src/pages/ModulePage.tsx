@@ -4,7 +4,7 @@ import { catalogApi } from '../api/catalog';
 import type { LabItem, ResourceItem } from '../api/types';
 import { LabRow, ResourceCard } from '../components/cards';
 import { Icon } from '../components/Icon';
-import { Btn, EmptyState, ErrorCard, MiniBtn, PBar, Segmented, Spinner } from '../components/ui';
+import { Btn, ChipRow, EmptyState, ErrorCard, LANGUAGES, MiniBtn, PBar, Segmented, Spinner, languageName } from '../components/ui';
 import { useToast } from '../state/ToastContext';
 import { useWorkspace } from '../state/WorkspaceContext';
 
@@ -35,6 +35,7 @@ export function ModulePage() {
   const [tab, setTab] = useState<Tab>('res');
   const [form, setForm] = useState<FormKind>('none');
   const [busy, setBusy] = useState(false);
+  const [langFilter, setLangFilter] = useState('all');
 
   const load = useCallback(
     async (signal?: AbortSignal) => {
@@ -77,6 +78,22 @@ export function ModulePage() {
   const personalLab = useMemo(
     () => new Map((bundle?.labs ?? []).filter((l) => l.catalogId).map((l) => [l.catalogId!, l])),
     [bundle],
+  );
+
+  /** Languages present in this module, English first — drives the filter chips. */
+  const languages = useMemo(() => {
+    const set = new Set((resources ?? []).map((r) => (r.language || 'en').toLowerCase()));
+    return Array.from(set).sort((a, b) =>
+      a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b),
+    );
+  }, [resources]);
+
+  const visibleResources = useMemo(
+    () =>
+      (resources ?? []).filter(
+        (r) => langFilter === 'all' || (r.language || 'en').toLowerCase() === langFilter,
+      ),
+    [resources, langFilter],
   );
 
   /** Items may only live inside a personal track copy — create it on demand. */
@@ -236,6 +253,25 @@ export function ModulePage() {
             </MiniBtn>
           </div>
 
+          {languages.length > 1 && (
+            <div style={{ marginBottom: 10 }}>
+              <ChipRow
+                options={[
+                  { id: 'all', label: `All (${resources?.length ?? 0})` },
+                  ...languages.map((code) => ({
+                    id: code,
+                    label: `${languageName(code)} (${
+                      (resources ?? []).filter((r) => (r.language || 'en').toLowerCase() === code)
+                        .length
+                    })`,
+                  })),
+                ]}
+                value={langFilter}
+                onChange={setLangFilter}
+              />
+            </div>
+          )}
+
           {form === 'res' && (
             <CustomResourceForm
               onCancel={() => setForm('none')}
@@ -255,7 +291,14 @@ export function ModulePage() {
           {(resources?.length ?? 0) === 0 && (
             <EmptyState icon="📖" title="No resources yet" body="Add your own with the button above." />
           )}
-          {resources?.map((r) => (
+          {(resources?.length ?? 0) > 0 && visibleResources.length === 0 && (
+            <EmptyState
+              icon="🔍"
+              title={`Nothing in ${languageName(langFilter)}`}
+              body="Pick another language above."
+            />
+          )}
+          {visibleResources.map((r) => (
             <ResourceCard
               key={r.id}
               item={r}
@@ -362,6 +405,7 @@ function CustomResourceForm({
     url: string;
     kind: string;
     access: string;
+    language: string;
     estMinutes: number;
   }) => void;
   onCancel: () => void;
@@ -370,6 +414,7 @@ function CustomResourceForm({
   const [url, setUrl] = useState('');
   const [kind, setKind] = useState('video');
   const [access, setAccess] = useState('free');
+  const [language, setLanguage] = useState('en');
   const [minutes, setMinutes] = useState(30);
 
   const valid = title.trim().length > 0 && url.trim().length > 0;
@@ -421,6 +466,21 @@ function CustomResourceForm({
           aria-label="Estimated minutes"
         />
       </div>
+      <div className="row" style={{ gap: 8 }}>
+        <select
+          className="field"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          aria-label="Content language"
+          title="Content language"
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
         <Btn variant="ghost" onClick={onCancel}>
           Cancel
@@ -434,6 +494,7 @@ function CustomResourceForm({
               url: url.trim(),
               kind,
               access,
+              language,
               estMinutes: Math.max(5, minutes),
             })
           }

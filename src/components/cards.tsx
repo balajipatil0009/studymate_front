@@ -13,7 +13,7 @@ import { useRating } from '../lib/useRating';
 import { useToast } from '../state/ToastContext';
 import { useWorkspace } from '../state/WorkspaceContext';
 import { Icon } from './Icon';
-import { AccessPill, InteractiveStars, KindPill, MiniBtn, PBar, StaticStars, TimePill } from './ui';
+import { AccessPill, InteractiveStars, KindPill, LanguagePill, MiniBtn, PBar, StaticStars, TimePill } from './ui';
 
 /* ------------------------------------------------------------------ */
 /* Syllabus list                                                       */
@@ -183,6 +183,7 @@ export interface CatalogResourceVM {
   url: string | null;
   kind: string;
   access: string;
+  language: string;
   summary: string;
   estMinutes: number;
   avgRating: number;
@@ -268,6 +269,7 @@ export function ResourceCard({
 
       <div className="pill-row">
         <KindPill kind={item.kind} />
+        <LanguagePill language={item.language} />
         <AccessPill access={item.access} />
         <TimePill minutes={item.estMinutes} />
         <InteractiveStars value={rating.my} onRate={rating.rate} busy={rating.busy} />

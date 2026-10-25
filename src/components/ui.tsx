@@ -150,6 +150,46 @@ export function TimePill({ minutes }: { minutes?: number | null }) {
   );
 }
 
+/** Languages offered in the custom-resource form. */
+export const LANGUAGES: ChipOption[] = [
+  { id: 'en', label: 'English' },
+  { id: 'hi', label: 'Hindi' },
+  { id: 'mr', label: 'Marathi' },
+  { id: 'ta', label: 'Tamil' },
+  { id: 'te', label: 'Telugu' },
+  { id: 'bn', label: 'Bengali' },
+  { id: 'gu', label: 'Gujarati' },
+  { id: 'kn', label: 'Kannada' },
+  { id: 'ml', label: 'Malayalam' },
+  { id: 'pa', label: 'Punjabi' },
+  { id: 'ur', label: 'Urdu' },
+];
+
+const LANG_NAMES: Record<string, string> = Object.fromEntries(
+  LANGUAGES.map((l) => [l.id, l.label]),
+);
+
+/** "en" → "English", "hi" → "Hindi"; unknown codes fall back to the tag itself. */
+export function languageName(code?: string | null) {
+  const c = (code ?? 'en').trim().toLowerCase();
+  return LANG_NAMES[c] ?? c.toUpperCase();
+}
+
+/**
+ * Content language of a resource/lab. English stays muted; other languages get
+ * the accent colour so a Hindi pick is visible at a glance in a mixed list.
+ */
+export function LanguagePill({ language }: { language?: string | null }) {
+  const code = (language ?? 'en').trim().toLowerCase();
+  const name = languageName(code);
+  const alt = code !== 'en' ? ' pill--lang--alt' : '';
+  return (
+    <span className={`pill pill--lang${alt}`} title={`Language: ${name}`} aria-label={`Language: ${name}`}>
+      {code.toUpperCase()}
+    </span>
+  );
+}
+
 /* ---------------- buttons ---------------- */
 
 interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {

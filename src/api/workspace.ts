@@ -51,9 +51,10 @@ export const workspaceApi = {
           url: string;
           resourceKind?: string;
           access?: string;
+          language?: string;
           estMinutes?: number;
         }
-      | { kind: 'lab'; task: string; estMinutes?: number },
+      | { kind: 'lab'; task: string; language?: string; estMinutes?: number },
   ) {
     return http.post<AddItemResult>(
       `/workspace/tracks/${personalId}/modules/${enc(moduleId)}/items`,
