@@ -12,6 +12,7 @@ import { TodoPage } from './pages/TodoPage';
 import { TrackDetailPage } from './pages/TrackDetailPage';
 import { AuthProvider, useAuth } from './state/AuthContext';
 import { PerformanceProvider } from './state/PerformanceContext';
+import { ThemeProvider } from './state/ThemeContext';
 import { TimerProvider } from './state/TimerContext';
 import { ToastProvider } from './state/ToastContext';
 import { WorkspaceProvider } from './state/WorkspaceContext';
@@ -50,7 +51,7 @@ function Gate() {
 
   if (status === 'loading') {
     return (
-      <div className="auth-page">
+      <div className="grid min-h-screen place-items-center">
         <Spinner />
       </div>
     );
@@ -62,17 +63,19 @@ function Gate() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <AuthProvider>
-          <WorkspaceProvider>
-            <PerformanceProvider>
-              <TimerProvider>
-                <Gate />
-              </TimerProvider>
-            </PerformanceProvider>
-          </WorkspaceProvider>
-        </AuthProvider>
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <WorkspaceProvider>
+              <PerformanceProvider>
+                <TimerProvider>
+                  <Gate />
+                </TimerProvider>
+              </PerformanceProvider>
+            </WorkspaceProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

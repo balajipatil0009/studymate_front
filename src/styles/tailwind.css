@@ -1,14 +1,158 @@
-/* Existing app styles are kept in a lower cascade layer so Tailwind
-   utilities (used by the redesigned timer page) can override them.
-   Tailwind's preflight is intentionally not imported: the rest of the
-   app still relies on its current global base styles. */
-@import './tokens.css' layer(legacy);
-@import './app.css' layer(legacy);
 @import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 @theme {
   --font-sans: 'Inter', 'Google Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --color-canvas: #070b16;
+  --color-surface: rgba(255, 255, 255, 0.045);
+  --color-surface-strong: rgba(255, 255, 255, 0.07);
+  --color-line: rgba(255, 255, 255, 0.09);
+  --color-line-soft: rgba(255, 255, 255, 0.055);
+  --color-line-strong: rgba(255, 255, 255, 0.2);
+  --color-track: rgba(0, 0, 0, 0.5);
+  --color-ink: #f3f5fb;
+  --color-muted: #99a3b8;
+  --color-faint: #6d7791;
+  --color-brand: #6366f1;
+  --color-brand-soft: #a78bfa;
+  --color-mint: #34d399;
+  --color-amber: #fbbf24;
+  --color-danger: #f87171;
+}
+
+/* Raw theme variables shared by the shell and cards. */
+:root {
+  --app-shell-bg: rgba(10, 16, 29, 0.7);
+  --app-shell-bg-strong: rgba(11, 18, 32, 0.9);
+  --toast-bg: #141c2e;
+  --panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.014));
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-panel: 0 24px 60px -40px rgba(0, 0, 0, 0.9);
+  --hero-from: rgba(99, 102, 241, 0.22);
+  --hero-mid: rgba(12, 19, 34, 0.5);
+  --hero-to: rgba(168, 85, 247, 0.12);
+  --hero-to-amber: rgba(251, 191, 36, 0.09);
+  --hero-to-mint: rgba(52, 211, 153, 0.05);
+  --ring-track: rgba(255, 255, 255, 0.07);
+  --ring-orbit: rgba(255, 255, 255, 0.1);
+  color-scheme: dark;
+}
+
+/* Light palette: warm off-white canvas, white cards, indigo focus accent,
+   emerald growth and deeper amber for reward states (AA on white). */
+:root[data-theme='light'] {
+  --color-canvas: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-strong: #eef2f9;
+  --color-line: rgba(15, 23, 42, 0.09);
+  --color-line-soft: rgba(15, 23, 42, 0.055);
+  --color-line-strong: rgba(15, 23, 42, 0.18);
+  --color-track: rgba(15, 23, 42, 0.05);
+  --color-ink: #0f172a;
+  --color-muted: #5b6478;
+  --color-faint: #8a93a6;
+  --color-brand: #4f46e5;
+  --color-brand-soft: #5b4bd6;
+  --color-mint: #059669;
+  --color-amber: #b45309;
+  --color-danger: #dc2626;
+
+  --app-shell-bg: rgba(255, 255, 255, 0.82);
+  --app-shell-bg-strong: rgba(255, 255, 255, 0.94);
+  --toast-bg: #ffffff;
+  --panel-bg: linear-gradient(180deg, #ffffff, #fbfcff);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05), inset 0 1px 0 #ffffff;
+  --shadow-panel: 0 20px 44px -28px rgba(15, 23, 42, 0.22);
+  --hero-from: #e9ecff;
+  --hero-mid: #f8f9ff;
+  --hero-to: #f3ecff;
+  --hero-to-amber: #fff5e6;
+  --hero-to-mint: #ecfdf5;
+  --ring-track: rgba(15, 23, 42, 0.08);
+  --ring-orbit: rgba(15, 23, 42, 0.12);
+
+  color-scheme: light;
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    background-image:
+      radial-gradient(1100px 620px at 12% -10%, rgba(99, 102, 241, 0.18), transparent 60%),
+      radial-gradient(900px 520px at 100% 0%, rgba(168, 85, 247, 0.12), transparent 55%),
+      radial-gradient(800px 600px at 50% 110%, rgba(34, 211, 238, 0.06), transparent 60%);
+    background-attachment: fixed;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  ::selection {
+    background: rgba(99, 102, 241, 0.45);
+    color: #fff;
+  }
+
+  * {
+    scrollbar-color: rgba(128, 140, 165, 0.35) transparent;
+  }
+}
+
+:root[data-theme='light'] body {
+  background-image:
+    radial-gradient(1100px 620px at 12% -10%, rgba(79, 70, 229, 0.08), transparent 60%),
+    radial-gradient(900px 520px at 100% 0%, rgba(124, 58, 237, 0.06), transparent 55%),
+    radial-gradient(800px 600px at 50% 110%, rgba(13, 148, 136, 0.05), transparent 60%);
+}
+
+/* Markdown comes from ReactMarkdown as raw elements, so a small set of
+   component classes is the cleanest way to style prose in both themes. */
+@layer components {
+  .md {
+    @apply text-sm leading-relaxed text-ink;
+  }
+
+  .md > * + * {
+    @apply mt-2.5;
+  }
+
+  .md h1,
+  .md h2,
+  .md h3 {
+    @apply mb-1.5 mt-4 text-[15px] font-bold text-ink;
+  }
+
+  .md p {
+    @apply m-0;
+  }
+
+  .md ul,
+  .md ol {
+    @apply m-0 pl-5;
+  }
+
+  .md li + li {
+    @apply mt-1;
+  }
+
+  .md code {
+    @apply rounded-md bg-surface-strong px-1.5 py-0.5 text-[12.5px] text-brand;
+  }
+
+  .md pre {
+    @apply overflow-x-auto rounded-xl border border-line bg-track p-3;
+  }
+
+  .md pre code {
+    @apply bg-transparent p-0 text-ink;
+  }
+
+  .md a {
+    @apply font-semibold text-brand underline decoration-brand/40 underline-offset-2;
+  }
+
+  .md blockquote {
+    @apply m-0 border-l-2 border-brand/40 pl-3 text-muted;
+  }
 }
 
 @keyframes tp-in {
@@ -41,5 +185,12 @@
   }
   50% {
     transform: translate3d(46px, 34px, 0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
 }

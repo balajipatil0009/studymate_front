@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowUpRight, Check, Plus, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { catalogApi } from '../api/catalog';
 import { workspaceApi } from '../api/workspace';
 import type { LabDetail, PersonalLab } from '../api/types';
 import { Icon } from '../components/Icon';
-import { Btn, ErrorCard, InteractiveStars, MiniBtn, Spinner } from '../components/ui';
+import {
+  Btn,
+  CircleBtn,
+  ErrorCard,
+  InteractiveStars,
+  MiniBtn,
+  Spinner,
+} from '../components/ui';
 import { fmtTime, ratingLabel } from '../lib/format';
 import { useRating } from '../lib/useRating';
 import { useToast } from '../state/ToastContext';
@@ -63,7 +71,6 @@ export function LabDetailPage() {
   const go = (delta: number) =>
     navigate(`/syllabus/${trackId}/modules/${moduleId}/labs/${Math.max(0, idx + delta)}`);
 
-  /** Adds the lab (creating the track copy first when needed) and returns the fresh personal item. */
   const addToList = async (): Promise<{ item: PersonalLab; personalId: string } | null> => {
     if (personal && personalTrack) return { item: personal, personalId: personalTrack.uid };
     if (!lab) return null;
@@ -83,13 +90,10 @@ export function LabDetailPage() {
         kind: 'lab',
         sourceRef: { trackId, moduleId, task: lab.task },
       });
-      // Snapshot counts AND the paged item cache must both update, otherwise
-      // this page keeps rendering the "not in To Do" state.
       await refresh();
       await reloadModule(personalId, moduleId);
       let item = (res.item as PersonalLab | undefined) ?? personal ?? null;
       if (res.exists && !item) {
-        // Server says it is already there but our cache has not loaded yet → fetch it.
         const paged = await workspaceApi.moduleLabs(personalId, moduleId, 1, 50);
         item = paged.items.find((l) => l.task === lab.task) ?? null;
       }
@@ -119,7 +123,7 @@ export function LabDetailPage() {
         goal: lab.estMinutes,
         elapsedSec: added.item.elapsedSec,
       });
-      toast('Timer started — go build something! ⏱', 'success');
+      toast('Timer started — go build something!', 'success');
       navigate('/');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Could not start work', 'error');
@@ -135,7 +139,7 @@ export function LabDetailPage() {
       const next = personal.status === 'completed' ? 'active' : 'completed';
       await setStatus(personal.uid, next);
       if (personalTrack) await reloadModule(personalTrack.uid, moduleId);
-      toast(next === 'completed' ? 'Lab completed — well done! 🎉' : 'Lab reopened', 'success');
+      toast(next === 'completed' ? 'Lab completed — well done!' : 'Lab reopened', 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Could not update lab', 'error');
     } finally {
@@ -187,33 +191,41 @@ export function LabDetailPage() {
         onNext={idx + 1 < lab.total ? () => go(1) : undefined}
       />
 
-      <div className="detail-hero">
-        <div className="eyebrow">
-          {done ? '✓ COMPLETED' : `LAB ${lab.idx + 1} OF ${lab.total}`}
+      <div className="relative mt-3 overflow-hidden rounded-[24px] border border-line bg-[linear-gradient(135deg,var(--hero-from),var(--hero-mid)_60%,var(--hero-to-mint))] p-5 shadow-[var(--shadow-card)]">
+        <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-soft">
+          {done ? (
+            <span className="inline-flex items-center gap-1">
+              <Check size={12} /> COMPLETED
+            </span>
+          ) : (
+            `LAB ${lab.idx + 1} OF ${lab.total}`
+          )}
         </div>
-        <h1>{lab.task}</h1>
-        <div className="row" style={{ marginTop: 8, flexWrap: 'wrap', gap: 8 }}>
-          <span className="pill pill--time">
+        <h1 className="mt-1.5 text-[22px] font-extrabold tracking-[-0.025em]">{lab.task}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-[3px] text-[10.5px] font-semibold text-muted">
             <Icon name="clock" size={11} /> {fmtTime(lab.estMinutes) || 'self-paced'}
           </span>
-          <span className="pill pill--text">HANDS-ON</span>
+          <span className="inline-flex items-center rounded-full bg-brand/15 px-2.5 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.06em] text-brand-soft">
+            HANDS-ON
+          </span>
           <InteractiveStars value={rating.my} onRate={rating.rate} busy={rating.busy} />
-          <span className="tiny">
+          <span className="text-[12px] text-faint">
             {ratingLabel(rating.avg)} community · {rating.count} ratings
           </span>
         </div>
       </div>
 
-      <div className="card">
-        <div className="eyebrow" style={{ marginBottom: 6 }}>
-          THE BRIEF
+      <div className="mt-3 rounded-[22px] border border-line bg-surface p-4">
+        <div className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-faint">
+          The brief
         </div>
         <div className="md">
           <ReactMarkdown>{lab.detail || 'No extra instructions — just build the thing!'}</ReactMarkdown>
         </div>
       </div>
 
-      <div className="row" style={{ gap: 8, margin: '12px 0', flexWrap: 'wrap' }}>
+      <div className="my-3 flex flex-wrap gap-2">
         <Btn variant={done ? 'soft' : 'primary'} large onClick={() => void onStartWork()} disabled={busy}>
           <Icon name="play" size={16} fill />
           {done ? 'Work again' : 'Start work'}
@@ -221,7 +233,15 @@ export function LabDetailPage() {
         {personal ? (
           <>
             <Btn variant={done ? 'soft' : 'green'} large onClick={() => void toggleDone()} disabled={busy}>
-              {done ? '↩ Reopen' : '✓ Mark done'}
+              {done ? (
+                <>
+                  <RotateCcw size={15} /> Reopen
+                </>
+              ) : (
+                <>
+                  <Check size={15} /> Mark done
+                </>
+              )}
             </Btn>
             <Btn variant="ghost" onClick={() => void removeFromList()} disabled={busy}>
               Remove
@@ -232,30 +252,33 @@ export function LabDetailPage() {
             variant="soft"
             large
             onClick={async () => {
-              // Failures toast their own message inside addToList.
               const added = await addToList();
               if (added) toast('Added to To Do', 'success');
             }}
             disabled={busy}
           >
-            ＋ Add to To Do
+            <Plus size={16} /> Add to To Do
           </Btn>
         )}
       </div>
 
       {lab.solution && (
-        <div className="card" style={{ marginTop: 4 }}>
-          <div className="row row--between">
-            <div className="eyebrow">SOLUTION</div>
-            <MiniBtn className={showSolution ? 'on' : ''} onClick={() => setShowSolution((s) => !s)}>
+        <div className="rounded-[22px] border border-line bg-surface p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-faint">
+              Solution
+            </div>
+            <MiniBtn active={showSolution} onClick={() => setShowSolution((s) => !s)}>
               {showSolution ? 'Hide' : 'Reveal'}
             </MiniBtn>
           </div>
           {showSolution && (
-            <div className="md" style={{ marginTop: 10 }}>
+            <div className="md mt-3">
               {lab.solution.type === 'link' && lab.solution.url ? (
                 <a href={lab.solution.url} target="_blank" rel="noopener noreferrer">
-                  Open reference solution ↗
+                  <span className="inline-flex items-center gap-1">
+                    Open reference solution <ArrowUpRight size={13} />
+                  </span>
                 </a>
               ) : (
                 <ReactMarkdown>{lab.solution.body ?? ''}</ReactMarkdown>
@@ -284,35 +307,21 @@ function LabTopbar({
   disabled?: boolean;
 }) {
   return (
-    <div className="detail-topbar">
-      <button type="button" className="circle-btn" onClick={onBack} aria-label="Back to module">
+    <div className="flex items-center gap-3 pb-1">
+      <CircleBtn label="Back to module" onClick={onBack}>
         <Icon name="chevronLeft" size={20} />
-      </button>
-      <div className="detail-topbar__title">
-        <h2>{title}</h2>
-        {subtitle && <p>{subtitle}</p>}
+      </CircleBtn>
+      <div className="min-w-0 flex-1 text-center">
+        <h2 className="truncate text-[17px] font-bold">{title}</h2>
+        {subtitle && <p className="truncate text-[12.5px] text-muted">{subtitle}</p>}
       </div>
-      <div className="row" style={{ gap: 6 }}>
-        <button
-          type="button"
-          className="circle-btn"
-          onClick={onPrev}
-          disabled={!onPrev || disabled}
-          aria-label="Previous lab"
-          style={{ opacity: onPrev ? 1 : 0.35 }}
-        >
+      <div className="flex shrink-0 gap-1.5">
+        <CircleBtn label="Previous lab" onClick={onPrev} disabled={!onPrev || disabled}>
           <Icon name="chevronLeft" size={18} />
-        </button>
-        <button
-          type="button"
-          className="circle-btn"
-          onClick={onNext}
-          disabled={!onNext || disabled}
-          aria-label="Next lab"
-          style={{ opacity: onNext ? 1 : 0.35 }}
-        >
+        </CircleBtn>
+        <CircleBtn label="Next lab" onClick={onNext} disabled={!onNext || disabled}>
           <Icon name="chevronRight" size={18} />
-        </button>
+        </CircleBtn>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BookOpen, Search, Sprout } from 'lucide-react';
 import { catalogApi } from '../api/catalog';
 import type { TrackListItem } from '../api/types';
 import { TrackCard } from '../components/cards';
@@ -62,15 +63,25 @@ export function SyllabusListPage() {
 
   return (
     <div>
-      <div className="hero">
-        <div className="hero__body">
-          <div className="hero__eyebrow">🌱 Focus in bloom</div>
-          <h1 className="hero__title">Syllabus</h1>
-          <p className="hero__sub">
+      <div className="relative mb-4 overflow-hidden rounded-[28px] border border-line bg-[linear-gradient(135deg,var(--hero-from),var(--hero-mid)_55%,var(--hero-to))] p-6 shadow-[var(--shadow-card)]">
+        <div className="relative z-10 max-w-[52ch]">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-soft">
+            <Sprout size={13} />
+            Focus in bloom
+          </div>
+          <h1 className="mt-2 text-[30px] font-extrabold leading-tight tracking-[-0.035em]">
+            Syllabus
+          </h1>
+          <p className="mt-1 text-sm text-muted">
             Pick a track, follow the roadmap, and check items off as you master them.
           </p>
         </div>
-        <div className="hero__leaf">📚</div>
+        <BookOpen
+          size={110}
+          strokeWidth={1.2}
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-2 -top-5 text-brand-soft opacity-10"
+        />
       </div>
 
       <SearchBox value={q} onChange={setQ} placeholder="Search tracks, e.g. react" />
@@ -78,13 +89,11 @@ export function SyllabusListPage() {
 
       {loading && <Spinner />}
 
-      {error && (
-        <ErrorCard body={error} onRetry={() => void load()} />
-      )}
+      {error && <ErrorCard body={error} onRetry={() => void load()} />}
 
       {!loading && !error && visible.length === 0 && (
         <EmptyState
-          icon="🔍"
+          icon={<Search size={34} strokeWidth={1.6} />}
           title="No tracks found"
           body="Try a different search or clear your filters."
         />
@@ -92,17 +101,14 @@ export function SyllabusListPage() {
 
       {!loading &&
         !error &&
-        visible.map((t) => (
-          <TrackCard key={t.id} track={t} progress={progressOf(t)} />
-        ))}
+        visible.map((t) => <TrackCard key={t.id} track={t} progress={progressOf(t)} />)}
 
       {!loading && !error && visible.length > 0 && (
-        <p className="tiny" style={{ textAlign: 'center', marginTop: 8 }}>
+        <p className="mt-2 text-center text-[12.5px] text-faint">
           Missing something?{' '}
           <button
             type="button"
-            className="link-btn"
-            style={{ padding: '0 4px' }}
+            className="px-1 font-bold text-brand-soft transition-colors hover:text-brand"
             onClick={() => toast('Re-run the backend seed to restore demo tracks', 'info')}
           >
             Restore demo data

@@ -259,7 +259,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const hint = countdownRunning
     ? 'Stay in flow — you got this'
     : remaining === 0
-      ? 'Done. Nice work 🎉'
+      ? 'Done. Nice work.'
       : remaining < totalSec
         ? 'Paused — tap resume when ready'
         : MODES[mode].hint;

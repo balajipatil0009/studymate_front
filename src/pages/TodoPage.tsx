@@ -1,8 +1,19 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Check, ClipboardList, RotateCcw, Search, Timer, X } from 'lucide-react';
 import type { PersonalItem, PersonalTrack } from '../api/types';
 import { Icon } from '../components/Icon';
-import { ChipRow, EmptyState, ErrorCard, MiniBtn, PBar, SearchBox, Spinner, languageName } from '../components/ui';
+import { TrackIcon } from '../components/TrackIcon';
+import {
+  ChipRow,
+  EmptyState,
+  ErrorCard,
+  MiniBtn,
+  PBar,
+  SearchBox,
+  Spinner,
+  languageName,
+} from '../components/ui';
 import { fmtClock, fmtTime } from '../lib/format';
 import { usePerformance } from '../state/PerformanceContext';
 import { useTimer } from '../state/TimerContext';
@@ -45,7 +56,6 @@ export function TodoPage() {
     return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
   }, [tracks]);
 
-  // Modules that hold items but haven't been paged in yet.
   const pending = tracks.some((t) =>
     t.modules.some((m) => m.total > 0 && items[`${t.uid}:${m.id}`] === undefined),
   );
@@ -102,7 +112,7 @@ export function TodoPage() {
       goal: i.estMinutes,
       elapsedSec: i.elapsedSec,
     });
-    toast(`Working on “${titleOf(i)}” ⏱`, 'success');
+    toast(`Working on “${titleOf(i)}”`, 'success');
     navigate('/');
   };
 
@@ -112,31 +122,35 @@ export function TodoPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>To Do</h1>
-        <p>Everything you have added, in one place.</p>
-      </div>
+      <header className="mb-5">
+        <h1 className="text-2xl font-extrabold tracking-[-0.03em]">To Do</h1>
+        <p className="mt-1 text-sm text-muted">Everything you have added, in one place.</p>
+      </header>
 
       {error && <ErrorCard body={error} onRetry={() => void refresh()} />}
 
-      <div className="overall-card">
-        <div className="row row--between">
+      <div className="relative mb-3 overflow-hidden rounded-[24px] border border-line bg-[linear-gradient(135deg,var(--hero-from),var(--hero-mid)_60%,var(--hero-to))] p-4 shadow-[var(--shadow-card)]">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="eyebrow">OVERALL PROGRESS</div>
-            <div className="row" style={{ gap: 10, marginTop: 4 }}>
-              <span className="overall-pct">{overall.pct}%</span>
-              <span className="overall-pct-label">
-                COMPLETE
+            <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-faint">
+              Overall progress
+            </div>
+            <div className="mt-1 flex items-center gap-2.5">
+              <span className="text-[30px] font-extrabold leading-none tracking-[-0.03em]">
+                {overall.pct}%
+              </span>
+              <span className="text-[10.5px] font-bold uppercase leading-tight tracking-[0.08em] text-faint">
+                complete
                 <br />
                 {overall.done}/{overall.total} items
               </span>
             </div>
           </div>
-          <div className="overall-streak">
-            <Icon name="flame" size={16} /> {stats.streak}-day streak
-          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber/25 bg-amber/10 px-2.5 py-1 text-[11.5px] font-bold text-amber">
+            <Icon name="flame" size={14} /> {stats.streak}-day streak
+          </span>
         </div>
-        <div style={{ marginTop: 12 }}>
+        <div className="mt-3">
           <PBar pct={overall.pct} large />
         </div>
       </div>
@@ -146,14 +160,18 @@ export function TodoPage() {
 
       {tracks.length === 0 && !loading && (
         <EmptyState
-          icon="🗒️"
+          icon={<ClipboardList size={34} strokeWidth={1.6} />}
           title="Nothing here yet"
           body="Add a track or individual resources from the Syllabus to build your study list."
         />
       )}
 
       {tracks.length > 0 && groups.length === 0 && !pending && (
-        <EmptyState icon="🔍" title="No matching tasks" body="Try another filter or search term." />
+        <EmptyState
+          icon={<Search size={34} strokeWidth={1.6} />}
+          title="No matching tasks"
+          body="Try another filter or search term."
+        />
       )}
 
       {pending && groups.length === 0 && <Spinner />}
@@ -162,39 +180,38 @@ export function TodoPage() {
         const isOpen = !collapsed[track.uid];
         const doneCount = rows.filter((r) => r.item.status === 'completed').length;
         return (
-          <div key={track.uid} className="card" style={{ marginBottom: 12, padding: 14 }}>
-            <div className="row" style={{ gap: 8 }}>
-              <button
-                type="button"
-                className="row"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flex: 1, minWidth: 0 }}
-                onClick={() => setCollapsed((c) => ({ ...c, [track.uid]: isOpen }))}
-                aria-expanded={isOpen}
+          <div
+            key={track.uid}
+            className="mb-3 rounded-[22px] border border-line bg-surface p-3.5 shadow-[var(--shadow-card)]"
+          >
+            <button
+              type="button"
+              className="flex w-full min-w-0 items-center gap-2 text-left"
+              onClick={() => setCollapsed((c) => ({ ...c, [track.uid]: isOpen }))}
+              aria-expanded={isOpen}
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[15px] border border-brand/20 bg-[linear-gradient(135deg,rgba(99,102,241,0.26),rgba(168,85,247,0.12))] text-brand-soft">
+                <TrackIcon id={track.originTrackId ?? track.id} size={20} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15.5px] font-bold text-ink">{track.title}</span>
+                <span className="block truncate text-[12px] text-muted">
+                  {doneCount}/{rows.length} shown done · {track.pct}% overall
+                </span>
+              </span>
+              <span
+                className={`text-faint transition-transform ${isOpen ? 'rotate-90' : ''}`}
               >
-                <span className="todo-row__icon">{track.icon}</span>
-                <span style={{ minWidth: 0, textAlign: 'left' }}>
-                  <span className="todo-row__title" style={{ display: 'block' }}>
-                    {track.title}
-                  </span>
-                  <span className="todo-row__meta">
-                    {doneCount}/{rows.length} shown done · {track.pct}% overall
-                  </span>
-                </span>
-                <span
-                  className="module-card__chevron"
-                  style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}
-                >
-                  <Icon name="chevronRight" size={18} />
-                </span>
-              </button>
-            </div>
+                <Icon name="chevronRight" size={18} />
+              </span>
+            </button>
 
-            <div style={{ marginTop: 8 }}>
+            <div className="mt-2">
               <PBar pct={track.pct} />
             </div>
 
             {isOpen && (
-              <div style={{ marginTop: 10 }}>
+              <div className="mt-2.5">
                 {rows.map(({ item, moduleTitle }) => (
                   <ItemRow
                     key={item.uid}
@@ -253,38 +270,45 @@ function ItemRow({
   const kindLabel = resource ? (item as PersonalResource).kind.toUpperCase() : 'LAB';
 
   return (
-    <div className={`resource-card${done ? ' done' : ''}`} style={{ marginBottom: 6 }}>
-      <div className="row row--between" style={{ alignItems: 'flex-start', gap: 8 }}>
+    <div
+      className={`mb-1.5 rounded-2xl border p-3 transition-colors ${
+        done
+          ? 'border-mint/20 bg-mint/[0.05]'
+          : 'border-line bg-surface-strong hover:border-line-strong'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
         <button
           type="button"
-          className="resource-card__title"
-          style={{ flex: 1 }}
+          className={`flex-1 text-left text-[13.5px] font-bold transition-colors ${
+            done ? 'text-mint' : 'text-ink hover:text-brand-soft'
+          }`}
           onClick={onOpen}
           title="Open"
         >
           {titleOf(item)}
-          <span className="tiny" style={{ display: 'block', fontWeight: 400 }}>
+          <span className="mt-0.5 block text-[11.5px] font-normal text-faint">
             {moduleTitle} · {kindLabel} · {languageName(item.language)}
             {item.elapsedSec > 0 ? ` · ${fmtClock(item.elapsedSec)} logged` : ''}
             {!resource && item.estMinutes > 0 ? ` · ${fmtTime(item.estMinutes)}` : ''}
           </span>
         </button>
-        <div className="row" style={{ gap: 6 }}>
-          <MiniBtn className="on" onClick={onStart} disabled={busy} title="Start the timer on this task">
-            ⏱ Start
+        <div className="flex shrink-0 items-center gap-1.5">
+          <MiniBtn active onClick={onStart} disabled={busy} title="Start the timer on this task">
+            <Timer size={12} /> Start
           </MiniBtn>
           <MiniBtn onClick={onToggle} disabled={busy} title={done ? 'Reopen' : 'Mark done'}>
-            {done ? '↩' : '✓'}
+            {done ? <RotateCcw size={12} /> : <Check size={12} />}
           </MiniBtn>
           <button
             type="button"
-            className="icon-btn"
+            className="grid h-7 w-7 place-items-center rounded-full text-faint transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
             onClick={onRemove}
             disabled={busy}
             aria-label="Remove from To Do"
             title="Remove"
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
       </div>

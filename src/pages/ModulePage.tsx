@@ -1,15 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { BookOpen, Check, FlaskConical, Plus, Search } from 'lucide-react';
 import { catalogApi } from '../api/catalog';
 import type { LabItem, ResourceItem } from '../api/types';
 import { LabRow, ResourceCard } from '../components/cards';
 import { Icon } from '../components/Icon';
-import { Btn, ChipRow, EmptyState, ErrorCard, LANGUAGES, MiniBtn, PBar, Segmented, Spinner, languageName } from '../components/ui';
+import {
+  Btn,
+  ChipRow,
+  CircleBtn,
+  EmptyState,
+  ErrorCard,
+  LANGUAGES,
+  MiniBtn,
+  PBar,
+  Segmented,
+  Spinner,
+  languageName,
+} from '../components/ui';
 import { useToast } from '../state/ToastContext';
 import { useWorkspace } from '../state/WorkspaceContext';
 
 type Tab = 'res' | 'lab';
 type FormKind = 'none' | 'res' | 'lab';
+
+const FIELD =
+  'min-w-0 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-brand/60 focus:bg-surface-strong';
 
 export function ModulePage() {
   const { trackId = '', moduleId = '' } = useParams();
@@ -80,7 +96,6 @@ export function ModulePage() {
     [bundle],
   );
 
-  /** Languages present in this module, English first — drives the filter chips. */
   const languages = useMemo(() => {
     const set = new Set((resources ?? []).map((r) => (r.language || 'en').toLowerCase()));
     return Array.from(set).sort((a, b) =>
@@ -96,7 +111,6 @@ export function ModulePage() {
     [resources, langFilter],
   );
 
-  /** Items may only live inside a personal track copy — create it on demand. */
   const ensureTrack = useCallback(async (): Promise<string> => {
     const existing = findTrack(trackId);
     if (existing) return existing.uid;
@@ -147,7 +161,7 @@ export function ModulePage() {
   const toggle = (uid: string, next: 'active' | 'completed') =>
     withTrack(async () => {
       await setStatus(uid, next);
-      toast(next === 'completed' ? 'Completed — nice work! 🎉' : 'Marked active', 'success');
+      toast(next === 'completed' ? 'Completed — nice work!' : 'Marked active', 'success');
     })();
 
   const addAll = async () => {
@@ -196,57 +210,59 @@ export function ModulePage() {
     <div>
       <ModuleTopbar stage={meta.stage} title={meta.title} onBack={() => navigate(`/syllabus/${trackId}`)} />
 
-      <div className="detail-hero">
-        <div className="eyebrow">{meta.stage.toUpperCase()}</div>
-        <h1>{meta.title}</h1>
-        <p>{meta.description}</p>
-        <div className="row" style={{ marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
-          <span className="pill pill--time">
+      <div className="relative mt-3 overflow-hidden rounded-[24px] border border-line bg-[linear-gradient(135deg,var(--hero-from),var(--hero-mid)_60%,var(--hero-to))] p-5 shadow-[var(--shadow-card)]">
+        <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-soft">
+          {meta.stage.toUpperCase()}
+        </div>
+        <h1 className="mt-1.5 text-[22px] font-extrabold tracking-[-0.025em]">{meta.title}</h1>
+        <p className="mt-1 max-w-[62ch] text-[13px] text-muted">{meta.description}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-[3px] text-[10.5px] font-semibold text-muted">
             <Icon name="clock" size={11} /> {resources?.length ?? 0} resources
           </span>
-          <span className="pill pill--time">
+          <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-[3px] text-[10.5px] font-semibold text-muted">
             <Icon name="flask" size={11} /> {labs?.length ?? 0} labs
           </span>
-          <span style={{ flex: 1 }} />
+          <span className="flex-1" />
           {personalTrack ? (
-            <MiniBtn onClick={() => navigate('/todo')} title="Open To Do list">
+            <MiniBtn active onClick={() => navigate('/todo')} title="Open To Do list">
               {personalModule
-                ? `${personalModule.done}/${personalModule.total} done ✓`
-                : 'In To Do ✓'}
+                ? `${personalModule.done}/${personalModule.total} done`
+                : 'In To Do'}
+              <Check size={12} />
             </MiniBtn>
           ) : (
-            <MiniBtn className="on" disabled={busy} onClick={() => void addAll()}>
-              ＋ Add all to To Do
+            <MiniBtn active disabled={busy} onClick={() => void addAll()}>
+              <Plus size={13} /> Add all to To Do
             </MiniBtn>
           )}
         </div>
         {personalModule && personalModule.total > 0 && (
-          <div style={{ marginTop: 10 }}>
+          <div className="mt-3">
             <PBar pct={pct} large />
           </div>
         )}
       </div>
 
-      <Segmented<Tab>
-        options={[
-          { id: 'res', label: `Resources (${resources?.length ?? 0})`, icon: 'book' },
-          { id: 'lab', label: `Labs (${labs?.length ?? 0})`, icon: 'flask' },
-        ]}
-        value={tab}
-        onChange={(t) => {
-          setTab(t);
-          setForm('none');
-        }}
-      />
+      <div className="mt-4">
+        <Segmented<Tab>
+          options={[
+            { id: 'res', label: `Resources (${resources?.length ?? 0})`, icon: 'book' },
+            { id: 'lab', label: `Labs (${labs?.length ?? 0})`, icon: 'flask' },
+          ]}
+          value={tab}
+          onChange={(t) => {
+            setTab(t);
+            setForm('none');
+          }}
+        />
+      </div>
 
       {tab === 'res' ? (
         <div>
-          <div className="row" style={{ marginBottom: 10 }}>
-            <MiniBtn
-              className={form === 'res' ? 'on' : ''}
-              onClick={() => setForm(form === 'res' ? 'none' : 'res')}
-            >
-              ＋ Custom resource
+          <div className="mb-2.5 flex flex-wrap gap-2">
+            <MiniBtn active={form === 'res'} onClick={() => setForm(form === 'res' ? 'none' : 'res')}>
+              <Plus size={13} /> Custom resource
             </MiniBtn>
             <MiniBtn disabled={busy} onClick={() => void addAll()}>
               Add all
@@ -254,7 +270,7 @@ export function ModulePage() {
           </div>
 
           {languages.length > 1 && (
-            <div style={{ marginBottom: 10 }}>
+            <div className="mb-2.5">
               <ChipRow
                 options={[
                   { id: 'all', label: `All (${resources?.length ?? 0})` },
@@ -289,11 +305,15 @@ export function ModulePage() {
           )}
 
           {(resources?.length ?? 0) === 0 && (
-            <EmptyState icon="📖" title="No resources yet" body="Add your own with the button above." />
+            <EmptyState
+              icon={<BookOpen size={34} strokeWidth={1.6} />}
+              title="No resources yet"
+              body="Add your own with the button above."
+            />
           )}
           {(resources?.length ?? 0) > 0 && visibleResources.length === 0 && (
             <EmptyState
-              icon="🔍"
+              icon={<Search size={34} strokeWidth={1.6} />}
               title={`Nothing in ${languageName(langFilter)}`}
               body="Pick another language above."
             />
@@ -319,12 +339,9 @@ export function ModulePage() {
         </div>
       ) : (
         <div>
-          <div className="row" style={{ marginBottom: 10 }}>
-            <MiniBtn
-              className={form === 'lab' ? 'on' : ''}
-              onClick={() => setForm(form === 'lab' ? 'none' : 'lab')}
-            >
-              ＋ Custom lab
+          <div className="mb-2.5 flex flex-wrap gap-2">
+            <MiniBtn active={form === 'lab'} onClick={() => setForm(form === 'lab' ? 'none' : 'lab')}>
+              <Plus size={13} /> Custom lab
             </MiniBtn>
             <MiniBtn disabled={busy} onClick={() => void addAll()}>
               Add all
@@ -347,9 +364,13 @@ export function ModulePage() {
             />
           )}
 
-          <div className="lab-list">
+          <div className="rounded-[20px] border border-line bg-surface p-3">
             {(labs?.length ?? 0) === 0 && (
-              <EmptyState icon="🧪" title="No labs yet" body="Practice makes progress — add your own." />
+              <EmptyState
+                icon={<FlaskConical size={34} strokeWidth={1.6} />}
+                title="No labs yet"
+                body="Practice makes progress — add your own."
+              />
             )}
             {labs?.map((l) => (
               <LabRow
@@ -380,15 +401,15 @@ function ModuleTopbar({
   onBack: () => void;
 }) {
   return (
-    <div className="detail-topbar">
-      <button type="button" className="circle-btn" onClick={onBack} aria-label="Back to track">
+    <div className="flex items-center gap-3 pb-1">
+      <CircleBtn label="Back to track" onClick={onBack}>
         <Icon name="chevronLeft" size={20} />
-      </button>
-      <div className="detail-topbar__title">
-        <h2>{title}</h2>
-        <p>{stage}</p>
+      </CircleBtn>
+      <div className="min-w-0 flex-1 text-center">
+        <h2 className="truncate text-[17px] font-bold">{title}</h2>
+        <p className="truncate text-[12.5px] text-muted">{stage}</p>
       </div>
-      <span style={{ width: 36 }} />
+      <span className="w-9" />
     </div>
   );
 }
@@ -420,24 +441,24 @@ function CustomResourceForm({
   const valid = title.trim().length > 0 && url.trim().length > 0;
 
   return (
-    <div className="form-card">
-      <div className="eyebrow" style={{ marginBottom: 8 }}>
-        CUSTOM RESOURCE
+    <div className="mb-3 rounded-[20px] border border-line bg-surface p-4">
+      <div className="mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-faint">
+        Custom resource
       </div>
       <input
-        className="field"
+        className={`${FIELD} mb-2 w-full`}
         placeholder="Title, e.g. CSS Grid course"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
       <input
-        className="field"
+        className={`${FIELD} mb-2 w-full`}
         placeholder="https://link.to/resource"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
-      <div className="row" style={{ gap: 8 }}>
-        <select className="field" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Kind">
+      <div className="mb-2 flex gap-2">
+        <select className={`${FIELD} flex-1`} value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Kind">
           {KINDS.map((k) => (
             <option key={k} value={k}>
               {k}
@@ -445,7 +466,7 @@ function CustomResourceForm({
           ))}
         </select>
         <select
-          className="field"
+          className={`${FIELD} flex-1`}
           value={access}
           onChange={(e) => setAccess(e.target.value)}
           aria-label="Access"
@@ -457,7 +478,7 @@ function CustomResourceForm({
           ))}
         </select>
         <input
-          className="field"
+          className={`${FIELD} w-[84px]`}
           type="number"
           min={5}
           step={5}
@@ -466,9 +487,9 @@ function CustomResourceForm({
           aria-label="Estimated minutes"
         />
       </div>
-      <div className="row" style={{ gap: 8 }}>
+      <div className="mb-3">
         <select
-          className="field"
+          className={`${FIELD} w-full`}
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
           aria-label="Content language"
@@ -481,7 +502,7 @@ function CustomResourceForm({
           ))}
         </select>
       </div>
-      <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+      <div className="flex justify-end gap-2">
         <Btn variant="ghost" onClick={onCancel}>
           Cancel
         </Btn>
@@ -517,18 +538,18 @@ function CustomLabForm({
   const [minutes, setMinutes] = useState(45);
 
   return (
-    <div className="form-card">
-      <div className="eyebrow" style={{ marginBottom: 8 }}>
-        CUSTOM LAB
+    <div className="mb-3 rounded-[20px] border border-line bg-surface p-4">
+      <div className="mb-2.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-faint">
+        Custom lab
       </div>
       <input
-        className="field"
+        className={`${FIELD} mb-2 w-full`}
         placeholder="What will you build? e.g. Build a todo app"
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
       <input
-        className="field"
+        className={`${FIELD} mb-3 w-full`}
         type="number"
         min={5}
         step={5}
@@ -536,7 +557,7 @@ function CustomLabForm({
         onChange={(e) => setMinutes(Number(e.target.value))}
         aria-label="Estimated minutes"
       />
-      <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+      <div className="flex justify-end gap-2">
         <Btn variant="ghost" onClick={onCancel}>
           Cancel
         </Btn>

@@ -1,0 +1,11 @@
+# Taste
+- Wants UI redesigns that feel modern, professional, and engaging — a distinctly new "vibe" rather than incremental tweaks to the existing look. Confidence: 0.7
+- Values deliberate, research-backed color decisions (e.g. color psychology) over default/arbitrary palettes, and expects the reasoning behind the chosen colors. Confidence: 0.65
+- Wants Tailwind CSS as the single styling layer for the whole app — utility classes in markup rather than hand-written/legacy CSS files, applied to existing pages and components, not just new UI. Confidence: 0.85
+- Dislikes redundant nesting in markup: wants extra wrapper divs and decorative layers removed when the surrounding shell already provides the effect, so page content sits directly on the app canvas. Confidence: 0.55
+- Prefers an incremental rollout: redesign/validate one page first as a pilot, then propagate the approved look to the rest of the app. Confidence: 0.72
+- Expects a redesign to end up visually unified across the whole app — not one restyled page sitting beside legacy-looking ones. Confidence: 0.6
+- Wants no emoji anywhere in the UI; use Lucide React (`lucide-react`) icon components instead, applied across all pages and shared components (nav, empty states, buttons, toasts, decorative accents). Confidence: 0.9
+- Treats unicode symbol glyphs (＋ ✕ ✓ ★ ✦ → ↗) as the same problem as emoji — prefers real icon components for those affordances too. Confidence: 0.55
+- Wants both light and dark themes as a real, switchable theme system (CSS-variable palettes per theme) with the toggle placed in the app navbar, rather than a single hardcoded theme. Confidence: 0.62
+- Expects a themed app to respect the user's OS setting by default: no saved choice should mean "follow the system" (prefers-color-scheme, live-updating), never a hardcoded light or dark default. Confidence: 0.75
