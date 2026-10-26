@@ -1,0 +1,45 @@
+/* Existing app styles are kept in a lower cascade layer so Tailwind
+   utilities (used by the redesigned timer page) can override them.
+   Tailwind's preflight is intentionally not imported: the rest of the
+   app still relies on its current global base styles. */
+@import './tokens.css' layer(legacy);
+@import './app.css' layer(legacy);
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+  --font-sans: 'Inter', 'Google Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+@keyframes tp-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tp-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+
+@keyframes tp-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(46px, 34px, 0);
+  }
+}
