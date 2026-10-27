@@ -14,9 +14,6 @@ const RANGE_FILTERS = [
   { id: '7', label: 'Last 7 days' },
 ];
 
-const GOAL_KEY = 'studymate-goal-v1';
-const DEFAULT_GOAL = 120;
-
 const HEAT_COLORS: Record<Theme, string[]> = {
   dark: ['#141b2c', '#25336b', '#4338ca', '#6366f1', '#a78bfa'],
   light: ['#eef1f8', '#c7d2fe', '#818cf8', '#4f46e5', '#3730a3'],
@@ -75,7 +72,7 @@ const CHART =
   'mt-4 rounded-[22px] border border-line bg-surface p-4 shadow-[var(--shadow-card)]';
 
 export function PerformancePage() {
-  const { sessions, stats, resetDemoData } = usePerformance();
+  const { sessions, stats, todayStats, goal, changeGoal, refresh } = usePerformance();
   const { tracks } = useWorkspace();
   const { theme } = useTheme();
   const [range, setRange] = useState('all');
@@ -83,16 +80,6 @@ export function PerformancePage() {
   const modeMeta = MODE_META[theme];
   const masteryTints = MASTERY_TINTS[theme];
   const [focusTint, bestTint, streakTint, sessionsTint] = STAT_TINTS[theme];
-  const [goal, setGoal] = useState(() => {
-    const raw = Number(localStorage.getItem(GOAL_KEY));
-    return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_GOAL;
-  });
-
-  const changeGoal = (delta: number) => {
-    const next = Math.max(30, Math.min(600, goal + delta));
-    setGoal(next);
-    localStorage.setItem(GOAL_KEY, String(next));
-  };
 
   const rangeSessions = useMemo(() => {
     if (range === 'all') return sessions;
@@ -115,7 +102,9 @@ export function PerformancePage() {
     return { total, best, counts, sessions: focus.length, byDay };
   }, [rangeSessions]);
 
-  const todayMins = stats.byDay[dateKey(new Date())] ?? 0;
+  const todayMins = todayStats?.minutes ?? stats.byDay[dateKey(new Date())] ?? 0;
+  const streak = todayStats?.streakDays ?? stats.streak;
+  const pctGoal = todayStats?.pctBloomed ?? (todayMins > 0 ? Math.round((todayMins / goal) * 100) : 0);
 
   const { cells, months } = useMemo(() => buildHeatmap(stats.byDay, heatColors), [stats.byDay, heatColors]);
 
@@ -162,7 +151,7 @@ export function PerformancePage() {
         />
         <StatCard
           label="Current streak"
-          value={`${stats.streak} ${stats.streak === 1 ? 'day' : 'days'}`}
+          value={`${streak} ${streak === 1 ? 'day' : 'days'}`}
           icon={<Icon name="flame" size={17} />}
           color={streakTint.color}
           ink={streakTint.ink}
@@ -180,8 +169,8 @@ export function PerformancePage() {
         <div className="min-w-[240px] flex-1">
           <ChipRow options={RANGE_FILTERS} value={range} onChange={setRange} />
         </div>
-        <MiniBtn onClick={resetDemoData} title="Regenerate the demo history">
-          <RefreshCw size={12} /> Reset demo data
+        <MiniBtn onClick={() => void refresh(goal)} title="Refresh from server">
+          <RefreshCw size={12} /> Refresh
         </MiniBtn>
       </div>
 
@@ -189,7 +178,7 @@ export function PerformancePage() {
         <div className="flex items-center justify-between gap-2">
           <span className="text-[15px] font-bold">Focus heatmap</span>
           <span className="inline-flex items-center gap-1 rounded-lg bg-surface-strong px-2 py-0.5 text-[11px] font-semibold text-muted">
-            <Icon name="flame" size={12} /> {stats.streak}-day streak
+            <Icon name="flame" size={12} /> {streak}-day streak
           </span>
         </div>
 
@@ -219,17 +208,17 @@ export function PerformancePage() {
           <span className="text-[15px] font-bold">Last 7 days</span>
           <span
             className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-semibold ${
-              todayMins >= goal ? 'bg-mint/10 text-mint' : 'bg-danger/10 text-danger'
+              pctGoal >= 100 ? 'bg-mint/10 text-mint' : 'bg-danger/10 text-danger'
             }`}
           >
-            {todayMins >= goal ? (
+            {pctGoal >= 100 ? (
               <>
                 <Check size={12} /> On target
               </>
             ) : (
               'Below goal'
             )}{' '}
-            · goal {fmtHours(goal)}
+            · {pctGoal}% · goal {fmtHours(goal)}
           </span>
         </div>
         <div className="mt-1.5 flex justify-end gap-1">
@@ -315,7 +304,7 @@ export function PerformancePage() {
       </section>
 
       <p className="mt-5 text-center text-[12.5px] text-faint">
-        History lives in this browser and is synced to the server when the sessions API is available.
+        Synced with your account when online. Local sessions are queued and uploaded automatically.
       </p>
     </div>
   );

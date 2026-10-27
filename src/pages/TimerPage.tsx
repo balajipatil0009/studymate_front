@@ -75,7 +75,7 @@ export function TimerPage() {
     startWork,
   } = useTimer();
   const { tracks, items, overall } = useWorkspace();
-  const { stats } = usePerformance();
+  const { stats, todayStats } = usePerformance();
   const [leaving, setLeaving] = useState(false);
 
   const pct = totalSec > 0 ? remaining / totalSec : 0;
@@ -98,7 +98,8 @@ export function TimerPage() {
       .slice(0, 4);
   }, [tracks, items, work?.uid]);
 
-  const todayMins = stats.last7[stats.last7.length - 1]?.mins ?? 0;
+  const todayMins = todayStats?.minutes ?? stats.last7[stats.last7.length - 1]?.mins ?? 0;
+  const streak = todayStats?.streakDays ?? stats.streak;
   const weekMax = Math.max(1, ...stats.last7.map((d) => d.mins));
   const bestDay = Math.max(stats.bestDay, todayMins, 1);
   const dayPct = Math.min(100, Math.round((todayMins / bestDay) * 100));
@@ -171,7 +172,7 @@ export function TimerPage() {
           </span>
           <span className="inline-flex items-center gap-[7px] rounded-full border border-amber/25 bg-amber/10 px-[13px] py-[7px] text-xs font-semibold text-amber">
             <Icon name="flame" size={14} />
-            {stats.streak > 0 ? `${stats.streak}-day streak` : 'Start a streak'}
+            {streak > 0 ? `${streak}-day streak` : 'Start a streak'}
           </span>
         </div>
       </header>
@@ -433,10 +434,10 @@ export function TimerPage() {
             </span>
             <div>
               <div className="text-sm font-bold text-ink">
-                {stats.streak > 0 ? `${stats.streak}-day streak` : 'Start a streak'}
+                {streak > 0 ? `${streak}-day streak` : 'Start a streak'}
               </div>
               <p className="mt-[3px] text-[11.5px] leading-[1.45] text-muted">
-                {stats.streak > 0
+                {streak > 0
                   ? `${fmtTime(stats.totalMins) || '0 min'} focused across ${stats.totalSessions} sessions. One session keeps it alive.`
                   : 'Finish a focus session today to light the flame.'}
               </p>

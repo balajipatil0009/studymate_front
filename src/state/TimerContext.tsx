@@ -12,7 +12,25 @@ import { useWorkspace } from './WorkspaceContext';
 import { usePerformance, type FocusMode } from './PerformanceContext';
 
 const WORK_KEY = 'studymate-work-v1';
+const WORK_LOGGED_KEY = 'studymate-work-logged-v1';
 const SYNC_EVERY_SEC = 10;
+
+function loadLogged(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(WORK_LOGGED_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLogged(map: Record<string, number>) {
+  try {
+    localStorage.setItem(WORK_LOGGED_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
 
 export interface WorkBinding {
   uid: string;
@@ -78,7 +96,7 @@ function saveWork(work: WorkBinding | null) {
 
 export function TimerProvider({ children }: { children: ReactNode }) {
   const { setStatus, saveElapsed, refresh } = useWorkspace();
-  const { logSession } = usePerformance();
+  const { logSession, logFocusSeconds } = usePerformance();
 
   // ---------- countdown ----------
   const [countdown, setCountdown] = useState(() => {
@@ -144,6 +162,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const [workRunning, setWorkRunning] = useState(false);
   const workRef = useRef<WorkBinding | null>(work);
   const elapsedRef = useRef<number>(work?.elapsedSec ?? 0);
+  const workLoggedRef = useRef<Record<string, number>>(loadLogged());
   const ticksRef = useRef(0);
   workRef.current = work;
 
@@ -172,6 +191,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       setWorkRunning(true);
       ticksRef.current = 0;
       void saveElapsed(binding.uid, binding.elapsedSec);
+      // Existing elapsed time is treated as already accounted for; only new
+      // seconds are logged to Performance when the block ends.
+      if (workLoggedRef.current[binding.uid] === undefined) {
+        workLoggedRef.current[binding.uid] = binding.elapsedSec;
+        saveLogged(workLoggedRef.current);
+      }
     },
     [saveElapsed],
   );
@@ -182,6 +207,23 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     },
     [saveElapsed],
   );
+
+  /** Push only the newly elapsed stopwatch seconds into the focus log. */
+  const flushWorkFocus = useCallback(() => {
+    const current = workRef.current;
+    if (!current) return;
+    const base = workLoggedRef.current[current.uid] ?? 0;
+    if (elapsedRef.current < base) {
+      workLoggedRef.current[current.uid] = elapsedRef.current;
+      saveLogged(workLoggedRef.current);
+      return;
+    }
+    const delta = Math.floor(elapsedRef.current - base);
+    if (delta < 1) return;
+    logFocusSeconds(delta, true);
+    workLoggedRef.current[current.uid] = base + delta;
+    saveLogged(workLoggedRef.current);
+  }, [logFocusSeconds]);
 
   const toggleWork = useCallback(() => {
     setWorkRunning((run) => {
@@ -215,6 +257,8 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     if (current) {
       saveWork({ ...current, elapsedSec: 0 });
       persistElapsed(current.uid, 0);
+      workLoggedRef.current[current.uid] = 0;
+      saveLogged(workLoggedRef.current);
     }
   }, [persistElapsed]);
 
@@ -228,6 +272,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const completeWork = useCallback(async () => {
     const current = workRef.current;
+    if (current) {
+      await saveElapsed(current.uid, elapsedRef.current);
+      flushWorkFocus();
+    }
     clearWork();
     if (current) {
       try {
@@ -237,14 +285,15 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       }
     }
     await refresh();
-  }, [clearWork, setStatus, refresh]);
+  }, [clearWork, setStatus, refresh, flushWorkFocus, saveElapsed]);
 
   const leaveWork = useCallback(async () => {
     const current = workRef.current;
     if (current) persistElapsed(current.uid, elapsedRef.current);
+    flushWorkFocus();
     clearWork();
     await refresh();
-  }, [clearWork, persistElapsed, refresh]);
+  }, [clearWork, persistElapsed, refresh, flushWorkFocus]);
 
   const countdownRunning = countdown.running;
 
