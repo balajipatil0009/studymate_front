@@ -1,8 +1,4 @@
-import { http, ApiError } from './http';
-
-// The NestJS `sessions` / `stats` controllers are still stubs (501). We call
-// them when possible and fall back to the local session log so the
-// Performance tab always has data — same behavior as the Flutter app.
+import { http } from './http';
 
 export interface FocusSession {
   ts: number;
@@ -11,27 +7,59 @@ export interface FocusSession {
   completed: boolean;
 }
 
+/** One row from GET /v1/sessions. */
+export interface HistorySession {
+  id: string;
+  ts: number;
+  mode: FocusSession['mode'];
+  sec: number;
+  mins: number;
+  completed: boolean;
+}
+
+export interface SessionLogResult {
+  logged: boolean;
+  id: string | null;
+  mode: FocusSession['mode'];
+  plannedSec: number;
+  focusedSec: number;
+  completed: boolean;
+  createdAt?: string;
+}
+
 export interface TodayStats {
   sessions: number;
   minutes: number;
   streakDays: number;
+  pctBloomed: number;
 }
 
 export const sessionsApi = {
-  /** Returns true when the server accepted the session. */
-  async log(mode: FocusSession['mode'], totalSec: number, remainingSec: number) {
+  /** Persists one countdown/work focus block; returns null when offline. */
+  async log(
+    mode: FocusSession['mode'],
+    totalSec: number,
+    remainingSec = 0,
+  ): Promise<SessionLogResult | null> {
     try {
-      await http.post('/sessions', { mode, totalSec, remainingSec });
-      return true;
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 501) return false;
-      return false;
+      return await http.post<SessionLogResult>('/sessions', { mode, totalSec, remainingSec });
+    } catch {
+      return null;
     }
   },
 
-  async today(): Promise<TodayStats | null> {
+  async history(days = 365): Promise<HistorySession[] | null> {
     try {
-      return await http.get<TodayStats>('/stats/today');
+      const res = await http.get<{ sessions: HistorySession[] }>(`/sessions?days=${days}`);
+      return res.sessions;
+    } catch {
+      return null;
+    }
+  },
+
+  async today(goalMinutes = 120): Promise<TodayStats | null> {
+    try {
+      return await http.get<TodayStats>(`/stats/today?goal=${goalMinutes}`);
     } catch {
       return null;
     }

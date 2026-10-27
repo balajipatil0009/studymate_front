@@ -49,9 +49,7 @@ export function useRating(
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Could not save rating';
         toast(
-          msg.includes('completed')
-            ? 'Finish this item first to unlock rating'
-            : msg,
+          /complete/i.test(msg) ? 'Finish this item first to unlock rating' : msg,
           'error',
         );
       } finally {
